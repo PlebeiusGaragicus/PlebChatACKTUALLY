@@ -30,6 +30,51 @@ class Message:
 
 
 
+def cmp_options():
+    with st.popover("", icon=":material/menu:"):
+        st.markdown("### :grey[:material/settings:] :rainbow[Settings]")
+        with st.container(height=300, border=False):
+            st.radio(
+                ":blue[Choose your Agent]",
+                ("phi", "llama"),
+                horizontal=True,
+                index=0,
+                key="model",
+            )
+
+            st.radio(
+                ":blue[Choose your Voice]",
+                ("👤 Human", "🤖 AI"),
+                horizontal=True,
+                index=0,
+                key="voice",
+            )
+
+            st.radio(
+                ":blue[Something else]",
+                ("blah blah", "another thing"),
+                horizontal=True,
+                index=0,
+            )
+
+            st.radio(
+                ":blue[So many options!]",
+                ("blah blah", "another thing"),
+                horizontal=True,
+                index=0,
+            )
+
+            st.radio(
+                ":blue[Too many options?]",
+                ("blah blah", "another thing"),
+                horizontal=True,
+                index=0,
+            )
+
+
+
+
+
 
 def main_page():
     ip_addr = st.context.headers.get('X-Forwarded-For', "?")
@@ -49,15 +94,15 @@ def main_page():
         initial_sidebar_state="collapsed",
     )
 
+    cmp_options()
 
     #### BANNER
     center_text("p", "🗣️🤖💬", size=60)
     # st.header("🗣️🤖💬", divider="rainbow")
     # st.header("🗣️🤖💬")
-    # hide_markdown_header_links()
+    hide_markdown_header_links()
 
-    with st.popover("", icon=":material/menu:"):
-        st.write(":orange[Settings]")
+
 
 
 ####################################################################################################################################
@@ -79,7 +124,7 @@ def main_page():
         # with st.spinner("Thinking..."):
         with st.chat_message("assistant"):
             response = requests.post(
-                url=f"{LANGSERVE_ENDPOINT}:{PORT}{PIPELINE_ENDPOINT}",
+                url=f"{LANGSERVE_ENDPOINT}:{PORT}/{PIPELINE_ENDPOINT}",
                 json={
                     "user_message": prompt,
                     "messages": st.session_state.messages,
@@ -107,10 +152,10 @@ def main_page():
 
 
 ####################################################################################################################################
-    if os.getenv("DEBUG"):
-        with st.sidebar.popover("DEBUG"):
-            st.write(":orange[DEBUG]")
-            st.write(st.secrets)
-            st.write(st.session_state)
-            st.write(st.context.cookies)
-            st.write(st.context.headers)
+    # if os.getenv("DEBUG"):
+    #     with st.sidebar.popover("DEBUG"):
+    #         st.write(":orange[DEBUG]")
+    #         st.write(st.secrets)
+    #         st.write(st.session_state)
+    #         st.write(st.context.cookies)
+    #         st.write(st.context.headers)

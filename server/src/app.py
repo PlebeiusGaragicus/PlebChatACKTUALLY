@@ -14,7 +14,13 @@ app = FastAPI(title="LangGraph Agent API")
 
 from src.graphs.phi.graph import graph as phi_graph
 from src.graphs.phi.commands import handle_commands
-from src.graphs.research.research_rabbit import builder as research_graph
+
+
+from src.graphs.llama.graph import graph as phi_graph
+from src.graphs.llama.commands import handle_commands
+
+
+# from src.graphs.research.research_rabbit import builder as research_graph
 
 
 
@@ -68,26 +74,30 @@ async def health_check():
     return {"status": "healthy"}
 
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the LangGraph Agent API"}
+# @app.get("/")
+# async def root():
+#     return {"message": "Welcome to the LangGraph Agent API"}
 
-@app.post("/research", response_class=StreamingResponse)
-async def research(request: PostRequest):
-    research_topic = request.user_message
-    if research_topic.startswith("/"):
-        return create_sse_response(
-            stream_simple_response("Commands are not supported in research mode.")
-        )
+
+##########################################################################################
+# @app.post("/research", response_class=StreamingResponse)
+# async def research(request: PostRequest):
+#     research_topic = request.user_message
+#     if research_topic.startswith("/"):
+#         return create_sse_response(
+#             stream_simple_response("Commands are not supported in research mode.")
+#         )
         
-    input_data = {"research_topic": research_topic}
-    return create_sse_response(
-        stream_graph_events(
-            research_graph, 
-            input_data
-        )
-    )
+#     input_data = {"research_topic": research_topic}
+#     return create_sse_response(
+#         stream_graph_events(
+#             research_graph, 
+#             input_data
+#         )
+#     )
 
+
+##########################################################################################
 @app.post("/phi", response_class=StreamingResponse)
 async def main(request: PostRequest):
     query = request.user_message
@@ -109,9 +119,23 @@ async def main(request: PostRequest):
     )
 
 
+##########################################################################################
+@app.post("/llama", response_class=StreamingResponse)
+async def main(request: PostRequest):
+    query = request.user_message
+    if query.startswith("/"):
+        return create_sse_response(handle_commands(request))
 
-# if __name__ == "__main__":
-#     # TODO: LangSmith setup!
+    # Create a default message from the user query if messages list is empty
+    message = {"role": "user", "content": query}
+    if request.messages and len(request.messages) > 0:
+        message = request.messages[-1]
 
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8510)
+    input_data = {"messages": [message]}
+    
+    return create_sse_response(
+        stream_graph_events(
+            phi_graph, 
+            input_data
+        )
+    )
