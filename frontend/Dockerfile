@@ -13,9 +13,8 @@ COPY requirements.txt requirements.txt
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY .streamlit .streamlit
-COPY LICENSE LICENSE
 COPY static static
-COPY .env .env
+# COPY .env .env
 COPY run_streamlit.py run_streamlit.py
 COPY src src
 

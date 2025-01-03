@@ -16,6 +16,16 @@ def log_rerun():
     cprint(f"RUNNING for: {ip_addr} - {lang} - {user_agent}", Colors.YELLOW)
 
 
+def cmp_debug():
+    if os.getenv("DEBUG"):
+        with st.sidebar.popover("DEBUG"):
+            st.write(":orange[DEBUG]")
+            st.write(st.secrets)
+            st.write( st.session_state )
+            st.write( st.context.cookies )
+            st.write( st.context.headers )
+
+
 
 def main_page():
     log_rerun()
@@ -25,12 +35,5 @@ def main_page():
     center_text("p", "🗣️🤖💬", size=60) # or h1, whichever
     st.header("", divider="rainbow")
 
-    st.write("Hello, Streamlit! 🎉")
+    st.write("git@github.com:PlebeiusGaragicus/PlebChatACKTUALLY.git! 🎉")
 
-    if os.getenv("DEBUG"):
-        with st.sidebar:
-            st.write(":orange[DEBUG]")
-            st.write(st.secrets)
-            st.write( st.session_state )
-            st.write( st.context.cookies )
-            st.write( st.context.headers )
