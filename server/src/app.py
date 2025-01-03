@@ -67,15 +67,12 @@ async def main(request: PostRequest):
 
     async def event_stream():
         async for event in graph.astream_events(input={"messages": [message]}, version="v2"):
+            print(event)
             kind = event["event"]
-            if kind == "on_chat_model_stream" or kind == "on_chain_stream":
-                content = event["data"]["chunk"]
+            if kind == "on_chat_model_stream":
+                content = event["data"]["chunk"].content
                 if content:
-                    if isinstance(content, dict):
-                        yield f"data: {json.dumps(content)}\n\n"
-                    else:
-                        yield f"data: {content}\n\n"
-        yield "data: [DONE]\n\n"
+                    yield content
 
     return StreamingResponse(
         event_stream(),
@@ -84,6 +81,7 @@ async def main(request: PostRequest):
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "Content-Type": "text/event-stream",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering if present
         }
     )
 

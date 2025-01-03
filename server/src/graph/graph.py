@@ -13,14 +13,18 @@ class State(BaseModel):
 
 def chatbot(state: State):
     MODEL = "phi3:latest"
-    llm = ChatOllama(model=MODEL,
-                     keep_alive="-1" # Keep the model alive indefinitely
-        )
+    llm = ChatOllama(
+        model=MODEL,
+        keep_alive="5m",  # Keep the model alive for 5 minutes
+        temperature=0.7,
+        base_url="http://host.docker.internal:11434",  # Connect to Ollama running on host machine
+    )
 
-
-    prompt = state.messages[-1]
-    return {"messages": ["hi"]}
-
+    # The messages are already LangChain message objects, use them directly
+    response = llm.stream(state.messages)
+    
+    # Return the assistant's message
+    return {"messages": [{"role": "assistant", "content": chunk.content} for chunk in response]}
 
 
 graph_builder = StateGraph(State)
