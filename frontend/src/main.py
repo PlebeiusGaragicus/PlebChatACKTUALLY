@@ -12,7 +12,7 @@ import streamlit as st
 # https://fonts.google.com/icons?icon.set=Material+Symbols&icon.style=Rounded
 
 
-from src.interface import Colors, cprint, center_text, hide_markdown_header_links, mobile_column_fix
+from src.interface import Colors, cprint, center_text, hide_markdown_header_links, hide_stop_button
 from src.config import (
     APP_NAME,
     LANGSERVE_ENDPOINT,
@@ -147,6 +147,7 @@ def main_page():
         cmp_header()
 
     hide_markdown_header_links()
+    hide_stop_button()
 
 
 

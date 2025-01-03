@@ -1,1 +1,1 @@
-VERSION = "0.0.llama"
+VERSION = "Ollama Llama 0.0.1"

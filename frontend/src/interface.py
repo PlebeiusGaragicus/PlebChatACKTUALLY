@@ -92,3 +92,18 @@ def hide_markdown_header_links():
         }
         </style>
         """, unsafe_allow_html=True)
+
+
+def hide_stop_button():
+    # stBaseButton-header
+
+    st.markdown("""
+<style>
+button[data-testid="stBaseButton-header"] {
+    display: none;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+# <button kind="header" data-testid="stBaseButton-header" aria-label="" class="st-emotion-cache-1c8mff4 e1obcldf17">Stop</button>
