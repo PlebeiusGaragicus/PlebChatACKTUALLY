@@ -3,6 +3,7 @@
 
 from typing import List
 from pydantic import BaseModel
+import json
 
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
@@ -49,26 +50,42 @@ async def main(request: PostRequest):
 
     query = request.user_message
     if query.startswith("/"):
-        return StreamingResponse(handle_commands(request), media_type="text/event-stream")
+        return StreamingResponse(
+            handle_commands(request),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Content-Type": "text/event-stream",
+            }
+        )
 
-    i = request.messages[-1]
+    # Create a default message from the user query if messages list is empty
+    message = {"role": "user", "content": query}
+    if request.messages and len(request.messages) > 0:
+        message = request.messages[-1]
 
     async def event_stream():
-        # input = request['user_message']
-        async for event in graph.astream_events(input={"messages": [i]}, version="v2"):
+        async for event in graph.astream_events(input={"messages": [message]}, version="v2"):
             kind = event["event"]
-            if  kind == "on_chat_model_stream" or kind=="on_chain_stream":
+            if kind == "on_chat_model_stream" or kind == "on_chain_stream":
                 content = event["data"]["chunk"]
-
                 if content:
                     if isinstance(content, dict):
-                        yield ''
-                        # pass
+                        yield f"data: {json.dumps(content)}\n\n"
                     else:
-                        print(content.content, end="")
-                        yield content.content
+                        yield f"data: {content}\n\n"
+        yield "data: [DONE]\n\n"
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream",
+        }
+    )
 
 
 

@@ -1,11 +1,13 @@
 import os
 import requests
 import streamlit as st
+import json
+from typing import List, Dict, Optional
 
 from src.common import cprint, Colors
-from src.interface import cmp_header, center_text
-
-APP_NAME = "Template"
+from src.config import APP_NAME
+from src.components.chat_window import cmp_chat_window
+from src.components.cmp_header import cmp_header
 
 
 def log_rerun():
@@ -30,25 +32,10 @@ def cmp_debug():
 def main_page():
     log_rerun()
 
+    # Main chat interface
     cmp_header(APP_NAME)
 
-    center_text("p", "🗣️🤖💬", size=60) # or h1, whichever
-    st.header("", divider="rainbow")
+    # Display the chat interface
+    cmp_chat_window()
 
-
-
-    st.write("## Ask a question")
-    prompt = st.text_area(
-        "Prompt",
-        value="",
-        key="prompt"
-    )
-    if st.button("Ask a question"):
-        # make a request to the API
-        response = requests.post(
-            "http://backend:8000/chat",
-            json={
-                "message": prompt
-            }
-        )
-        st.write(response.json())
+    cmp_debug()

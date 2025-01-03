@@ -18,7 +18,8 @@ def chatbot(state: State):
         )
 
 
-    return {"messages": [llm.invoke(state["messages"])]}
+    prompt = state.messages[-1]
+    return {"messages": ["hi"]}
 
 
 
