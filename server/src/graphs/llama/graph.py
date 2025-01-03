@@ -20,7 +20,7 @@ class State(BaseModel):
 ############################################################################
 
 def chatbot(state: State):
-    MODEL = "phi3:latest"
+    MODEL = "llama3.2:1b"
     llm = ChatOllama(
         model=MODEL,
         keep_alive="5m",  # Keep the model alive for 5 minutes

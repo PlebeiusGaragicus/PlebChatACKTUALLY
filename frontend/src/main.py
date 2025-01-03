@@ -1,4 +1,5 @@
 import os
+import enum
 import requests
 from PIL import Image
 from functools import partial
@@ -29,17 +30,49 @@ class Message:
         self.content = content
 
 
+def format_agents(arg):
+    if arg == AgentEndpoints.phi.value:
+        return "✨ :red[Phi-4]"
+
+    elif arg == AgentEndpoints.llama.value:
+        return "🦙 :green[Llama 3]"
+
+
+def new_thread():
+    st.session_state.messages = []
+
+
+
+class AgentEndpoints(enum.Enum):
+    phi = "phi"
+    llama = "llama"
+
+
 
 def cmp_options():
-    with st.popover("", icon=":material/menu:"):
+    # with st.popover("", icon=":material/menu:"):
+    icon_color = "orange"
+    icon = f":{icon_color}[:material/smart_toy:]"
+
+    # with st.popover("", icon=icon):
+    with st.popover(icon):
         st.markdown("### :grey[:material/settings:] :rainbow[Settings]")
-        with st.container(height=300, border=False):
+
+        # TODO doesn't work
+        # if len(st.session_state.get("messages", [])) > 0:
+        #     if st.button(":red[Clear conversation]"):
+        #         st.rerun()
+
+        # with st.container(height=300, border=False):
+        with st.container(border=False):
             st.radio(
                 ":blue[Choose your Agent]",
-                ("phi", "llama"),
+                (AgentEndpoints.phi.value, AgentEndpoints.llama.value),
                 horizontal=True,
                 index=0,
                 key="model",
+                format_func=format_agents,
+                on_change=new_thread,
             )
 
             st.radio(
@@ -50,30 +83,42 @@ def cmp_options():
                 key="voice",
             )
 
-            st.radio(
-                ":blue[Something else]",
-                ("blah blah", "another thing"),
-                horizontal=True,
-                index=0,
-            )
+            # st.radio(
+            #     ":blue[Something else]",
+            #     ("blah blah", "another thing"),
+            #     horizontal=True,
+            #     index=0,
+            # )
 
-            st.radio(
-                ":blue[So many options!]",
-                ("blah blah", "another thing"),
-                horizontal=True,
-                index=0,
-            )
+            # st.radio(
+            #     ":blue[So many options!]",
+            #     ("blah blah", "another thing"),
+            #     horizontal=True,
+            #     index=0,
+            # )
 
-            st.radio(
-                ":blue[Too many options?]",
-                ("blah blah", "another thing"),
-                horizontal=True,
-                index=0,
-            )
-
-
+            # st.radio(
+            #     ":blue[Too many options?]",
+            #     ("blah blah", "another thing", "yes", "no", "maybe"),
+            #     horizontal=True,
+            #     index=0,
+            # )
 
 
+def cmp_header():
+
+    # header_text = "🗣️🤖💬"
+    # if st.session_state.model == AgentEndpoints.phi.value:
+    #     header_text += " :material/router:"
+    # elif st.session_state.model == AgentEndpoints.llama.value:
+    #     header_text += " 🦙"
+
+    # center_text("p", header_text, size=40)
+    # st.header(header_text, divider="rainbow")
+    # st.header("🗣️🤖💬", divider="rainbow")
+    # st.header("🗣️🤖💬")
+
+    st.header(":rainbow[PlebChat :] " + format_agents(st.session_state.model), divider="rainbow")
 
 
 def main_page():
@@ -94,12 +139,13 @@ def main_page():
         initial_sidebar_state="collapsed",
     )
 
+    header_placeholder = st.empty()
+
     cmp_options()
 
-    #### BANNER
-    center_text("p", "🗣️🤖💬", size=60)
-    # st.header("🗣️🤖💬", divider="rainbow")
-    # st.header("🗣️🤖💬")
+    with header_placeholder:
+        cmp_header()
+
     hide_markdown_header_links()
 
 
@@ -113,18 +159,18 @@ def main_page():
         st.session_state.messages = []
 
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
+        with st.chat_message(message["role"], avatar=AVATAR_HUMAN if message["role"] == "user" else AVATAR_AI):
             st.markdown(message["content"])
 
     if prompt := st.chat_input("What do you want to learn?"):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar=AVATAR_HUMAN):
             st.markdown(prompt)
 
         # with st.spinner("Thinking..."):
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar=AVATAR_AI):
             response = requests.post(
-                url=f"{LANGSERVE_ENDPOINT}:{PORT}/{PIPELINE_ENDPOINT}",
+                url=f"{LANGSERVE_ENDPOINT}:{PORT}/{st.session_state.model}",
                 json={
                     "user_message": prompt,
                     "messages": st.session_state.messages,

@@ -13,11 +13,11 @@ app = FastAPI(title="LangGraph Agent API")
 
 
 from src.graphs.phi.graph import graph as phi_graph
-from src.graphs.phi.commands import handle_commands
+from src.graphs.phi.commands import handle_commands as phi_handle_commands
 
 
-from src.graphs.llama.graph import graph as phi_graph
-from src.graphs.llama.commands import handle_commands
+from src.graphs.llama.graph import graph as llama_graph
+from src.graphs.llama.commands import handle_commands as llama_handle_commands
 
 
 # from src.graphs.research.research_rabbit import builder as research_graph
@@ -58,9 +58,12 @@ async def stream_graph_events(graph, input_data):
                 content_encoded = content.replace('\n', '\\n')
                 yield f"data: {content_encoded}\n\n"
 
+
 async def stream_simple_response(message: str):
     """Stream a simple string message in SSE format."""
     yield f"data: {message}\n\n"
+
+
 
 class PostRequest(BaseModel):
     user_message: str
@@ -74,27 +77,6 @@ async def health_check():
     return {"status": "healthy"}
 
 
-# @app.get("/")
-# async def root():
-#     return {"message": "Welcome to the LangGraph Agent API"}
-
-
-##########################################################################################
-# @app.post("/research", response_class=StreamingResponse)
-# async def research(request: PostRequest):
-#     research_topic = request.user_message
-#     if research_topic.startswith("/"):
-#         return create_sse_response(
-#             stream_simple_response("Commands are not supported in research mode.")
-#         )
-        
-#     input_data = {"research_topic": research_topic}
-#     return create_sse_response(
-#         stream_graph_events(
-#             research_graph, 
-#             input_data
-#         )
-#     )
 
 
 ##########################################################################################
@@ -102,7 +84,7 @@ async def health_check():
 async def main(request: PostRequest):
     query = request.user_message
     if query.startswith("/"):
-        return create_sse_response(handle_commands(request))
+        return create_sse_response(phi_handle_commands(request))
 
     # Create a default message from the user query if messages list is empty
     message = {"role": "user", "content": query}
@@ -124,7 +106,7 @@ async def main(request: PostRequest):
 async def main(request: PostRequest):
     query = request.user_message
     if query.startswith("/"):
-        return create_sse_response(handle_commands(request))
+        return create_sse_response(llama_handle_commands(request))
 
     # Create a default message from the user query if messages list is empty
     message = {"role": "user", "content": query}
@@ -135,7 +117,7 @@ async def main(request: PostRequest):
     
     return create_sse_response(
         stream_graph_events(
-            phi_graph, 
+            llama_graph, 
             input_data
         )
     )
