@@ -91,12 +91,15 @@ def main_page():
             full_response = ""
 
             with st.spinner("Thinking..."):
-                for chunk in response.iter_lines():
-                    if chunk:
-                        chunk_str = chunk.decode()
-                        full_response += chunk_str
-                        message_placeholder.markdown(full_response + "▌")
-                        # message_placeholder.markdown(full_response)
+                for line in response.iter_lines():
+                    if line:
+                        line = line.decode()
+                        if line.startswith("data: "):
+                            chunk = line[6:]  # Remove "data: " prefix
+                            # Decode escaped newlines
+                            chunk = chunk.replace('\\n', '\n')
+                            full_response += chunk
+                            message_placeholder.markdown(full_response + "▌")
             message_placeholder.markdown(full_response)
         st.session_state.messages.append({"role": "assistant", "content": full_response})
 

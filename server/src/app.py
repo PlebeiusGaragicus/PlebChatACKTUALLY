@@ -4,6 +4,7 @@
 from typing import List
 from pydantic import BaseModel
 import json
+import asyncio
 
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
@@ -67,21 +68,23 @@ async def main(request: PostRequest):
 
     async def event_stream():
         async for event in graph.astream_events(input={"messages": [message]}, version="v2"):
-            print(event)
             kind = event["event"]
             if kind == "on_chat_model_stream":
                 content = event["data"]["chunk"].content
                 if content:
-                    yield content
+                    # Replace newlines with encoded form for SSE
+                    content_encoded = content.replace('\n', '\\n')
+                    yield f"data: {content_encoded}\n\n"
 
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-transform",
             "Connection": "keep-alive",
             "Content-Type": "text/event-stream",
-            "X-Accel-Buffering": "no",  # Disable nginx buffering if present
+            "X-Accel-Buffering": "no",
+            "Transfer-Encoding": "chunked"
         }
     )
 
