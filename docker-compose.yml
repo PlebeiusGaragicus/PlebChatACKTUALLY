@@ -13,7 +13,7 @@ services:
     volumes:
       # Map local files to the container for live updates (useful for development)
       # TODO: should this be removed for production?  Likely...
-      - ./src:/app/src
+      - ./frontend/src:/app/src
 
     environment:
       # Avoid output buffering; this line ensures that print() statements are sent directly to the terminal

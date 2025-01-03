@@ -1,4 +1,5 @@
 import os
+import requests
 import streamlit as st
 
 from src.common import cprint, Colors
@@ -21,10 +22,9 @@ def cmp_debug():
         with st.sidebar.popover("DEBUG"):
             st.write(":orange[DEBUG]")
             st.write(st.secrets)
-            st.write( st.session_state )
-            st.write( st.context.cookies )
-            st.write( st.context.headers )
-
+            st.write(st.session_state)
+            st.write(st.context.cookies)
+            st.write(st.context.headers)
 
 
 def main_page():
@@ -35,5 +35,20 @@ def main_page():
     center_text("p", "🗣️🤖💬", size=60) # or h1, whichever
     st.header("", divider="rainbow")
 
-    st.write("git@github.com:PlebeiusGaragicus/PlebChatACKTUALLY.git! 🎉")
 
+
+    st.write("## Ask a question")
+    prompt = st.text_area(
+        "Prompt",
+        value="",
+        key="prompt"
+    )
+    if st.button("Ask a question"):
+        # make a request to the API
+        response = requests.post(
+            "http://backend:8000/chat",
+            json={
+                "message": prompt
+            }
+        )
+        st.write(response.json())

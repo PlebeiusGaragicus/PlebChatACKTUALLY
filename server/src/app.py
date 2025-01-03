@@ -44,7 +44,7 @@ async def root():
     return {"message": "Welcome to the LangGraph Agent API"}
 
 
-@app.post("/template")
+@app.post("/chat")
 async def main(request: PostRequest):
 
     query = request.user_message
