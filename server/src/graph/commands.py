@@ -33,29 +33,32 @@ def handle_commands(request):
 # STANDARD COMMANDS FOR EVERY AGENT
 ######################################
     if command == "version":
-        from VERSION import VERSION
-        yield f"Version `{VERSION}`"
+        from .VERSION import VERSION
+        yield f"data: Version `{VERSION}`\n\n"
 
     elif command == "info" or command == "about":
-        yield CONSTRUCT_INFORMATION
-    
-    elif command == "usage" or command == "help":
-        yield f"```\n{USAGE}\n```"
+        yield f"data: {CONSTRUCT_INFORMATION}\n\n"
 
-    elif command == "draw":
-        from graph import GRAPH_ASCII
-        yield f"```\n{GRAPH_ASCII}\n```"
+    elif command == "usage" or command == "help":
+        # Send entire usage text as a single event
+        response = f"Available commands:\n```\n{USAGE.strip()}```"
+        response = response.replace('\n', '\\n')
+        yield f"data: {response}\n\n"
+
+    # elif command == "draw":
+    #     from graph import GRAPH_ASCII
+    #     yield f"```\n{GRAPH_ASCII}\n```"
 
     elif command == "debug":
-        yield f"# body:\n```json\n{json.dumps(request.body, indent=4)}\n```\n# model_id:"
-    
+        debug_info = f"# body:\n```json\n{json.dumps(request.body, indent=4)}\n```\n# model_id:"
+        debug_info = debug_info.replace('\n', '\\n')
+        yield f"data: {debug_info}\n\n"
+
 ######################################
 # CUSTOM COMMANDS TO THIS AGENT
 ######################################
 
-    # elif command == "your_custom_command":
-    #     yield SOMETHING
-
-######################################
     else:
-        yield f"Command not found.\n\n```txt\n{USAGE}\n```"
+        response = f"Command not found.\nAvailable commands:\n```\n{USAGE.strip()}```"
+        response = response.replace('\n', '\\n')
+        yield f"data: {response}\n\n"

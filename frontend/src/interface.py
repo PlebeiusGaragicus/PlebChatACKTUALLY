@@ -1,10 +1,5 @@
 import os
-import pathlib
-from PIL import Image
-
 import streamlit as st
-
-from src.config import STATIC_PATH
 
 
 # BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
@@ -41,44 +36,16 @@ def center_text(type, text, size=None):
 
 
 
-# # https://github.com/streamlit/streamlit/issues/5003
-# def column_fix():
-#     # TODO: what does this to again...? A fix for mobile?
-# #     st.write("""<style>
-# # [data-testid="column"] {
-# #     width: calc(33.3333% - 1rem) !important;
-# #     flex: 1 1 calc(33.3333% - 1rem) !important;
-# #     min-width: calc(33% - 1rem) !important;
-# # }
-# # </style>""", unsafe_allow_html=True)
+def mobile_column_fix():
+    """ https://github.com/streamlit/streamlit/issues/5003 """
 
-# # def fix_mobile_columns():    
-#     st.write('''<style>
-#     [data-testid="column"] {
-#         width: calc(16.6666% - 1rem) !important;
-#         flex: 1 1 calc(16.6666% - 1rem) !important;
-#         min-width: calc(16.6666% - 1rem) !important;
-#     }
-#     </style>''', unsafe_allow_html=True)
-
-def column_fix():
-    st.write('''<style>
+    st.write("""<style>
 [data-testid="column"] {
     width: calc(33.3333% - 1rem) !important;
     flex: 1 1 calc(33.3333% - 1rem) !important;
     min-width: calc(33% - 1rem) !important;
 }
-</style>''', unsafe_allow_html=True)
-
-def fix_mobile_columns():    
-    st.write('''<style>
-    [data-testid="column"] {
-        width: calc(16.6666% - 1rem) !important;
-        flex: 1 1 calc(16.6666% - 1rem) !important;
-        min-width: calc(16.6666% - 1rem) !important;
-    }
-    </style>''', unsafe_allow_html=True)
-
+</style>""", unsafe_allow_html=True)
 
 
 def centered_button_trick():
@@ -125,4 +92,3 @@ def hide_markdown_header_links():
         }
         </style>
         """, unsafe_allow_html=True)
-

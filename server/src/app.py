@@ -72,6 +72,7 @@ async def main(request: PostRequest):
             if kind == "on_chat_model_stream":
                 content = event["data"]["chunk"].content
                 if content:
+                    print("Sending:", content)
                     # Replace newlines with encoded form for SSE
                     content_encoded = content.replace('\n', '\\n')
                     yield f"data: {content_encoded}\n\n"
@@ -83,8 +84,7 @@ async def main(request: PostRequest):
             "Cache-Control": "no-cache, no-transform",
             "Connection": "keep-alive",
             "Content-Type": "text/event-stream",
-            "X-Accel-Buffering": "no",
-            "Transfer-Encoding": "chunked"
+            "X-Accel-Buffering": "no"
         }
     )
 

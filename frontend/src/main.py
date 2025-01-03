@@ -11,7 +11,7 @@ import streamlit as st
 # https://fonts.google.com/icons?icon.set=Material+Symbols&icon.style=Rounded
 
 
-from src.interface import Colors, cprint, center_text, hide_markdown_header_links, column_fix, fix_mobile_columns
+from src.interface import Colors, cprint, center_text, hide_markdown_header_links, mobile_column_fix
 from src.config import (
     APP_NAME,
     LANGSERVE_ENDPOINT,
@@ -56,7 +56,7 @@ def main_page():
     # st.header("🗣️🤖💬")
     # hide_markdown_header_links()
 
-    with st.popover("", icon=":material/settings:"):
+    with st.popover("", icon=":material/menu:"):
         st.write(":orange[Settings]")
 
 
@@ -94,6 +94,7 @@ def main_page():
                 for line in response.iter_lines():
                     if line:
                         line = line.decode()
+                        print("Received:", line)
                         if line.startswith("data: "):
                             chunk = line[6:]  # Remove "data: " prefix
                             # Decode escaped newlines
