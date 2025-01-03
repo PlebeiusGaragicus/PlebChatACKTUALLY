@@ -8,6 +8,7 @@ langchain_community
 
 langgraph
 langchain_ollama
+tavily-python>=0.5.0
 # langserve
 
 # python-dotenv==1.0.0

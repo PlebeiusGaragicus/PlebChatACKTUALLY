@@ -15,5 +15,6 @@ HARD_DISABLE_TITLE_GENERATION = True
 # Langserver endpoint
 LANGSERVE_ENDPOINT = "http://backend"
 PORT = 8000
-PIPELINE_ENDPOINT = "/chat"
+# PIPELINE_ENDPOINT = "/chat"
+PIPELINE_ENDPOINT = "/phi"
 ########################################################################
