@@ -186,10 +186,9 @@ def main_page():
 
 
 ####################################################################################################################################
-    # if os.getenv("DEBUG"):
-    #     with st.sidebar.popover("DEBUG"):
-    #         st.write(":orange[DEBUG]")
-    #         st.write(st.secrets)
-    #         st.write(st.session_state)
-    #         st.write(st.context.cookies)
-    #         st.write(st.context.headers)
+    if os.getenv("DEBUG"):
+        with st.sidebar:
+            st.write(st.secrets)
+            st.write(st.session_state)
+            st.write(st.context.cookies)
+            st.write(st.context.headers)
