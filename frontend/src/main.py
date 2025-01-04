@@ -2,6 +2,8 @@ import os
 import enum
 import requests
 from PIL import Image
+# from pathlib import Path
+# import base64
 from functools import partial
 
 import streamlit as st
@@ -24,6 +26,16 @@ from src.login import login
 AVATAR_HUMAN = f"{STATIC_PATH}/user2.png"
 AVATAR_AI = f"{STATIC_PATH}/assistant.png"
 
+
+# @st.cache_data
+# def img_to_bytes(img_path):
+#     img_bytes = Path(img_path).read_bytes()
+#     encoded_img = base64.b64encode(img_bytes).decode()
+#     # print(encoded_img)
+#     return encoded_img
+
+
+
 class Message:
     def __init__(self, role, content):
         self.role = role
@@ -32,6 +44,7 @@ class Message:
 
 
 
+# Note: the string used below much match the approprate endpoint in our FastAPI server
 class AgentEndpoints(enum.Enum):
     phi = "phi"
     llama = "llama"
@@ -75,19 +88,20 @@ def cmp_options():
         # st.markdown("### :grey[Select Agent]")
         st.radio(
             # ":blue[Choose your Agent]",
-            "",
+            "Choose your Agent",
             (AgentEndpoints.phi.value, AgentEndpoints.llama.value, AgentEndpoints.research.value),
             horizontal=True,
             index=0,
             key="model",
             format_func=format_agents,
             on_change=new_thread,
+            label_visibility="collapsed"
         )
 
         if st.session_state.model == AgentEndpoints.phi.value:
             # with st.container(height=200, border=True):
             # with st.expander(":grey[Configure Agent]", icon=":material/settings:", expanded=False):
-            with st.expander(":grey[:material/settings: Configure Agent]", expanded=False):
+            with st.expander(":grey[:material/settings: Configure]", expanded=False):
                 st.radio(
                     ":blue[Choose your Voice]",
                     ("👤 Human", "🤖 AI"),
@@ -95,7 +109,7 @@ def cmp_options():
                     index=0,
                     key="voice",
                 )
-                st.text_input(":blue[Your Name]", key="name", value="Pleb")
+                st.text_input(":blue[examples examples]", value="Pleb")
         else:
             st.session_state.voice = None
 
@@ -119,6 +133,19 @@ def cmp_options():
 
 
 ################################################################################################
+# def edit_message():
+#     """Remove the last user and assistant messages and set the placeholder to the last user message."""
+#     if len(st.session_state.messages) >= 2:
+#         # Get the last user message before removing it
+#         last_user_message = st.session_state.messages[-2]["content"]
+#         # Remove last assistant and user messages
+#         st.session_state.messages = st.session_state.messages[:-2]
+#         # Set the placeholder to the last user message
+#         # st.session_state.placeholder = last_user_message
+#         # st.session_state.query = last_user_message
+
+
+################################################################################################
 def main_page():
     if os.getenv("DEBUG", False): # should be the only time we call this
         st.session_state.debug = True
@@ -134,16 +161,19 @@ def main_page():
     #### PAGE SETUP
     favicon = Image.open(os.path.join(STATIC_PATH, "favicon.ico"))
     st.set_page_config(
-        # page_title="DEBUG!" if os.getenv("DEBUG", False) else "NOS4A2",
         page_title=APP_NAME,
         page_icon=favicon,
         layout="wide",
         # initial_sidebar_state="auto",
-        # initial_sidebar_state="collapsed",
+        initial_sidebar_state="collapsed",
     )
 
+####################################################
     if not login():
         st.stop()
+####################################################
+
+
 
 
     header_placeholder = st.empty()
@@ -152,6 +182,15 @@ def main_page():
         # cmp_header()
         # st.header(":rainbow[PlebChat :] " + format_agents(st.session_state.model), divider="rainbow")
         st.header("" + format_agents(st.session_state.model), divider="rainbow")
+
+        # image_base64 = img_to_bytes(MICROSOFT)
+        # html = f"""<div style="display: flex; align-items: center;">
+        #     <img src='data:image/png;base64,{image_base64}' style="height: 32px; margin-right: 10px;">
+        #     <h1 style="margin: 0;">{format_agents(st.session_state.model)}</h2>
+        # </div>"""
+        # st.markdown(html, unsafe_allow_html=True)
+        # st.divider()
+        # st.header("" + format_agents(st.session_state.model), divider="rainbow")
 
 
     mobile_column_fix()
@@ -170,44 +209,87 @@ def main_page():
         # st.toast(":rainbow[Welcome to PlebChat!]", icon=":material/smart_toy:")
         # st.toast("#### :rainbow[Welcome to PlebChat!]")
 
-
-
     for message in st.session_state.messages:
         with st.chat_message(message["role"], avatar=AVATAR_HUMAN if message["role"] == "user" else AVATAR_AI):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input(placeholder="What do you want to learn?"):
+
+    if st.session_state.get("placeholder", None) is None:
+        st.session_state.placeholder = "What do you want to learn?"
+
+    # if prompt := st.chat_input(placeholder="What do you want to learn?"):
+    if prompt := st.chat_input(placeholder="What do you want to learn?", key="query"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar=AVATAR_HUMAN):
             st.markdown(prompt)
 
 
         with st.chat_message("assistant", avatar=AVATAR_AI):
-            response = requests.post(
-                url=f"{LANGSERVE_ENDPOINT}:{PORT}/{st.session_state.model}",
-                json={
-                    "user_message": prompt,
-                    "messages": st.session_state.messages,
-                    "body": {}, #TODO user_id
-                },
-                stream=True,
-            )
-            message_placeholder = st.empty()
-            full_response = ""
+            try:
+                response = requests.post(
+                    url=f"{LANGSERVE_ENDPOINT}:{PORT}/{st.session_state.model}",
+                    json={
+                        "user_message": prompt,
+                        "messages": st.session_state.messages,
+                        "body": {}, #TODO user_id
+                    },
+                    stream=True,
+                )
+                response.raise_for_status()  # Raise an exception for bad status codes
+                message_placeholder = st.empty()
+                full_response = ""
 
-            with st.spinner("🧠 Thinking..."):
-                for line in response.iter_lines():
-                    if line:
-                        line = line.decode()
-                        # print("Received:", line)
-                        if line.startswith("data: "):
-                            chunk = line[6:]  # Remove "data: " prefix
-                            # Decode escaped newlines
-                            chunk = chunk.replace('\\n', '\n')
-                            full_response += chunk
-                            message_placeholder.markdown(full_response + "▌")
-            message_placeholder.markdown(full_response)
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+                with st.spinner("🧠 Thinking..."):
+                    try:
+                        for line in response.iter_lines():
+                            if line:
+                                line = line.decode()
+                                print("Received:", line)  # Debug line
+                                if line.startswith("data: "):
+                                    chunk = line[6:]  # Remove "data: " prefix
+                                    # Decode escaped newlines
+                                    chunk = chunk.replace('\\n', '\n')
+                                    full_response += chunk
+                                    message_placeholder.markdown(full_response + "▌")
+                        message_placeholder.markdown(full_response)
+                        st.session_state.messages.append({"role": "assistant", "content": full_response})
+                    except (requests.exceptions.ChunkedEncodingError, requests.exceptions.RequestException) as e:
+                        error_details = str(e)
+                        try:
+                            if hasattr(e, 'response') and e.response is not None:
+                                error_json = e.response.json()
+                                error_details = f"{str(e)}\nServer details: {error_json}"
+                        except:
+                            pass
+                        st.error(f"Error while streaming response: {error_details}")
+                        if not full_response:  # If we haven't received any response yet
+                            message_placeholder.markdown("❌ Sorry, there was an error processing your request. Please try again.")
+                        else:  # If we have partial response, show it
+                            message_placeholder.markdown(full_response + "\n\n❌ *Note: Response was cut off due to an error*")
+                            st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+            except requests.exceptions.RequestException as e:
+                error_details = str(e)
+                try:
+                    if hasattr(e, 'response') and e.response is not None:
+                        error_json = e.response.json()
+                        error_details = f"{str(e)}\nServer details: {error_json}"
+                except:
+                    pass
+                st.error(f"Failed to connect to the server: {error_details}")
+                message_placeholder = st.empty()
+                message_placeholder.markdown("❌ Sorry, there was an error connecting to the server. Please try again later.")
+
+    if len(st.session_state.messages):
+        # TODO: USE THIS WHEN WE ACTUALLY GET A FEW MORE ACTIONS
+        # with st.popover("", icon=":material/construction:"):
+
+
+        if st.button(":grey[:material/undo: Undo last message]", type="tertiary"):
+            st.session_state.messages = st.session_state.messages[:-2]
+            st.rerun()
+
+
 
 
 
@@ -218,3 +300,13 @@ def main_page():
             st.write(st.session_state)
             st.write(st.context.cookies)
             st.write(st.context.headers)
+
+
+
+
+class ActionButtons(enum.Enum):
+    Undo = ":red[:material/undo: Undo]"
+    Clear = ":grey[:material/clear: Clear]"
+
+    def __str__(self):
+        return self.value
