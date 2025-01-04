@@ -4,7 +4,6 @@ import requests
 from PIL import Image
 from functools import partial
 
-
 import streamlit as st
 
 
@@ -18,14 +17,9 @@ import streamlit as st
 
 
 
-from src.interface import Colors, cprint, center_text, hide_markdown_header_links, hide_stop_button
-from src.config import (
-    APP_NAME,
-    LANGSERVE_ENDPOINT,
-    PORT,
-    # PIPELINE_ENDPOINT,
-    STATIC_PATH
-)
+from src.config import APP_NAME, LANGSERVE_ENDPOINT, PORT, STATIC_PATH
+from src.interface import Colors, cprint, center_text, hide_markdown_header_links, hide_stop_button, mobile_column_fix
+from src.login import login
 
 AVATAR_HUMAN = f"{STATIC_PATH}/user2.png"
 AVATAR_AI = f"{STATIC_PATH}/assistant.png"
@@ -47,13 +41,13 @@ class AgentEndpoints(enum.Enum):
 
 def format_agents(arg):
     if arg == AgentEndpoints.phi.value:
-        return "✨ :red[Phi-4]"
+        return "✨:red[Phi-4]"
 
     elif arg == AgentEndpoints.llama.value:
-        return "🦙 :green[Llama 3]"
+        return "🦙:green[Llama 3]"
 
     elif arg == AgentEndpoints.research.value:
-        return "🧠 :blue[Research Rabbit]"
+        return "🌐:violet[Researcher]"
 
 
 def new_thread():
@@ -67,26 +61,33 @@ def new_thread():
 def cmp_options():
     # with st.popover("", icon=":material/menu:"):
     icon_color = "orange"
-    icon = f":{icon_color}[:material/smart_toy:]"
+    # icon = f":{icon_color}[:material/smart_toy:]"
+    icon = f":{icon_color}[:material/smart_toy:] :rainbow[PlebChat]"
 
     # with st.popover("", icon=icon):
     with st.popover(icon):
-        st.markdown("### :grey[:material/settings:] :rainbow[Settings]")
+        # st.markdown("### :grey[:material/settings:] :rainbow[Intellence Settings]")
+        # st.markdown("### :grey[:material/settings:] :rainbow[Intelligent Agents]")
 
+        # with st.container(height=200, border=False):
+        # with st.container(height=150):
+        # with st.container(border=False):
+        # st.markdown("### :grey[Select Agent]")
+        st.radio(
+            # ":blue[Choose your Agent]",
+            "",
+            (AgentEndpoints.phi.value, AgentEndpoints.llama.value, AgentEndpoints.research.value),
+            horizontal=True,
+            index=0,
+            key="model",
+            format_func=format_agents,
+            on_change=new_thread,
+        )
 
-        # with st.container(height=300, border=False):
-        with st.container(border=False):
-            st.radio(
-                ":blue[Choose your Agent]",
-                (AgentEndpoints.phi.value, AgentEndpoints.llama.value, AgentEndpoints.research.value),
-                horizontal=True,
-                index=0,
-                key="model",
-                format_func=format_agents,
-                on_change=new_thread,
-            )
-
-            if st.session_state.model == AgentEndpoints.phi.value:
+        if st.session_state.model == AgentEndpoints.phi.value:
+            # with st.container(height=200, border=True):
+            # with st.expander(":grey[Configure Agent]", icon=":material/settings:", expanded=False):
+            with st.expander(":grey[:material/settings: Configure Agent]", expanded=False):
                 st.radio(
                     ":blue[Choose your Voice]",
                     ("👤 Human", "🤖 AI"),
@@ -94,10 +95,24 @@ def cmp_options():
                     index=0,
                     key="voice",
                 )
-            else:
-                st.session_state.voice = None
+                st.text_input(":blue[Your Name]", key="name", value="Pleb")
+        else:
+            st.session_state.voice = None
 
 
+
+        st.divider()
+        # bcols2 = st.columns([1, 1], gap="small")
+        # with bcols2[0]:
+        #     if st.button(":green[Done]", on_click=new_thread):
+        #         pass
+        # with bcols2[1]:
+        #     st.session_state.authenticator.logout(":red[Logout]")
+        st.session_state.authenticator.logout(":red[Logout]")
+
+################################################################################################
+# END OF SETTINGS POPUP
+################################################################################################
 
 
 
@@ -105,6 +120,11 @@ def cmp_options():
 
 ################################################################################################
 def main_page():
+    if os.getenv("DEBUG", False): # should be the only time we call this
+        st.session_state.debug = True
+    else:
+        st.session_state.debug = False
+
     ip_addr = st.context.headers.get('X-Forwarded-For', "?")
     user_agent = st.context.headers.get('User-Agent', "?")
     lang = st.context.headers.get('Accept-Language', "?")
@@ -122,16 +142,22 @@ def main_page():
         # initial_sidebar_state="collapsed",
     )
 
+    if not login():
+        st.stop()
+
 
     header_placeholder = st.empty()
     cmp_options()
     with header_placeholder:
         # cmp_header()
-        st.header(":rainbow[PlebChat :] " + format_agents(st.session_state.model), divider="rainbow")
+        # st.header(":rainbow[PlebChat :] " + format_agents(st.session_state.model), divider="rainbow")
+        st.header("" + format_agents(st.session_state.model), divider="rainbow")
 
 
+    mobile_column_fix()
     hide_markdown_header_links()
-    hide_stop_button()
+    if not st.session_state.debug:
+        hide_stop_button()
 
 
 
@@ -150,7 +176,7 @@ def main_page():
         with st.chat_message(message["role"], avatar=AVATAR_HUMAN if message["role"] == "user" else AVATAR_AI):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input("What do you want to learn?"):
+    if prompt := st.chat_input(placeholder="What do you want to learn?"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar=AVATAR_HUMAN):
             st.markdown(prompt)
@@ -186,7 +212,7 @@ def main_page():
 
 
 ####################################################################################################################################
-    if os.getenv("DEBUG"):
+    if st.session_state.debug:
         with st.sidebar:
             st.write(st.secrets)
             st.write(st.session_state)
