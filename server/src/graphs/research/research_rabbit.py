@@ -5,18 +5,20 @@ from typing_extensions import Literal
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_ollama import ChatOllama
-from langgraph.graph import START, END, StateGraph
+from langgraph.graph import StateGraph
 
 from .configuration import Configuration
 from .utils import deduplicate_and_format_sources, tavily_search, format_sources
 from .state import SummaryState, SummaryStateInput, SummaryStateOutput
 from .prompts import query_writer_instructions, summarizer_instructions, reflection_instructions
 
-# LLM
-llm = ChatOllama(model=Configuration.local_llm, temperature=0)
-llm_json_mode = ChatOllama(model=Configuration.local_llm, temperature=0, format="json")
+OLLAMA_HOST = "http://host.docker.internal:11434"
 
-# Nodes   
+# LLM
+llm = ChatOllama(model=Configuration.local_llm, temperature=0, base_url=OLLAMA_HOST)
+llm_json_mode = ChatOllama(model=Configuration.local_llm, temperature=0, format="json", base_url=OLLAMA_HOST)
+
+# Nodes
 def generate_query(state: SummaryState):
     """ Generate a query for web search """
     
@@ -112,11 +114,11 @@ builder.add_node("reflect_on_summary", reflect_on_summary)
 builder.add_node("finalize_summary", finalize_summary)
 
 # Add edges
-builder.add_edge(START, "generate_query")
+builder.add_edge("__start__", "generate_query")
 builder.add_edge("generate_query", "web_research")
 builder.add_edge("web_research", "summarize_sources")
 builder.add_edge("summarize_sources", "reflect_on_summary")
 builder.add_conditional_edges("reflect_on_summary", route_research)
-builder.add_edge("finalize_summary", END)
+builder.add_edge("finalize_summary", "__end__")
 
 graph = builder.compile()

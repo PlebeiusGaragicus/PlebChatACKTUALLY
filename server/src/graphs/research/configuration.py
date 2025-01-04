@@ -10,7 +10,8 @@ from dataclasses import dataclass
 class Configuration:
     """The configurable fields for the research assistant."""
     max_web_research_loops: int = 3
-    local_llm: str = "llama3.2"
+    # local_llm: str = "llama3.2"
+    local_llm: str = "llama3.1:latest"
 
     @classmethod
     def from_runnable_config(

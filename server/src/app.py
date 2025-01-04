@@ -1,5 +1,5 @@
-# import dotenv
-# dotenv.load_dotenv()
+import dotenv
+dotenv.load_dotenv()
 
 from typing import List
 from pydantic import BaseModel
@@ -20,7 +20,7 @@ from src.graphs.llama.graph import graph as llama_graph
 from src.graphs.llama.commands import handle_commands as llama_handle_commands
 
 
-# from src.graphs.research.research_rabbit import builder as research_graph
+from src.graphs.research.research_rabbit import graph as research_graph
 
 
 
@@ -48,12 +48,13 @@ def create_sse_response(stream):
 
 async def stream_graph_events(graph, input_data):
     """Stream events from a graph with standardized formatting."""
+    print(type(graph))
     async for event in graph.astream_events(input=input_data, version="v2"):
         kind = event["event"]
         if kind == "on_chat_model_stream":
             content = event["data"]["chunk"].content
             if content:
-                print("Sending:", content)
+                # print("Sending:", content)
                 # Replace newlines with encoded form for SSE
                 content_encoded = content.replace('\n', '\\n')
                 yield f"data: {content_encoded}\n\n"
@@ -118,6 +119,28 @@ async def main(request: PostRequest):
     return create_sse_response(
         stream_graph_events(
             llama_graph, 
+            input_data
+        )
+    )
+
+
+##########################################################################################
+@app.post("/research", response_class=StreamingResponse)
+async def main(request: PostRequest):
+    query = request.user_message
+    if query.startswith("/"):
+        return create_sse_response(stream_simple_response("no commands available"))
+
+    # # Create a default message from the user query if messages list is empty
+    # message = {"role": "user", "content": query}
+    # if request.messages and len(request.messages) > 0:
+    #     message = request.messages[-1]
+
+    input_data = {"research_topic": query}
+    
+    return create_sse_response(
+        stream_graph_events(
+            research_graph, 
             input_data
         )
     )

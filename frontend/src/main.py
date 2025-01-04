@@ -12,12 +12,18 @@ import streamlit as st
 # https://fonts.google.com/icons?icon.set=Material+Symbols&icon.style=Rounded
 
 
+
+## TODO: get markdown to show local images
+# https://discuss.streamlit.io/t/local-image-button/5409/6
+
+
+
 from src.interface import Colors, cprint, center_text, hide_markdown_header_links, hide_stop_button
 from src.config import (
     APP_NAME,
     LANGSERVE_ENDPOINT,
     PORT,
-    PIPELINE_ENDPOINT,
+    # PIPELINE_ENDPOINT,
     STATIC_PATH
 )
 
@@ -30,6 +36,15 @@ class Message:
         self.content = content
 
 
+
+
+class AgentEndpoints(enum.Enum):
+    phi = "phi"
+    llama = "llama"
+    research = "research"
+
+
+
 def format_agents(arg):
     if arg == AgentEndpoints.phi.value:
         return "✨ :red[Phi-4]"
@@ -37,18 +52,18 @@ def format_agents(arg):
     elif arg == AgentEndpoints.llama.value:
         return "🦙 :green[Llama 3]"
 
+    elif arg == AgentEndpoints.research.value:
+        return "🧠 :blue[Research Rabbit]"
+
 
 def new_thread():
     st.session_state.messages = []
 
 
 
-class AgentEndpoints(enum.Enum):
-    phi = "phi"
-    llama = "llama"
 
 
-
+################################################################################################
 def cmp_options():
     # with st.popover("", icon=":material/menu:"):
     icon_color = "orange"
@@ -58,16 +73,12 @@ def cmp_options():
     with st.popover(icon):
         st.markdown("### :grey[:material/settings:] :rainbow[Settings]")
 
-        # TODO doesn't work
-        # if len(st.session_state.get("messages", [])) > 0:
-        #     if st.button(":red[Clear conversation]"):
-        #         st.rerun()
 
         # with st.container(height=300, border=False):
         with st.container(border=False):
             st.radio(
                 ":blue[Choose your Agent]",
-                (AgentEndpoints.phi.value, AgentEndpoints.llama.value),
+                (AgentEndpoints.phi.value, AgentEndpoints.llama.value, AgentEndpoints.research.value),
                 horizontal=True,
                 index=0,
                 key="model",
@@ -75,52 +86,24 @@ def cmp_options():
                 on_change=new_thread,
             )
 
-            st.radio(
-                ":blue[Choose your Voice]",
-                ("👤 Human", "🤖 AI"),
-                horizontal=True,
-                index=0,
-                key="voice",
-            )
-
-            # st.radio(
-            #     ":blue[Something else]",
-            #     ("blah blah", "another thing"),
-            #     horizontal=True,
-            #     index=0,
-            # )
-
-            # st.radio(
-            #     ":blue[So many options!]",
-            #     ("blah blah", "another thing"),
-            #     horizontal=True,
-            #     index=0,
-            # )
-
-            # st.radio(
-            #     ":blue[Too many options?]",
-            #     ("blah blah", "another thing", "yes", "no", "maybe"),
-            #     horizontal=True,
-            #     index=0,
-            # )
+            if st.session_state.model == AgentEndpoints.phi.value:
+                st.radio(
+                    ":blue[Choose your Voice]",
+                    ("👤 Human", "🤖 AI"),
+                    horizontal=True,
+                    index=0,
+                    key="voice",
+                )
+            else:
+                st.session_state.voice = None
 
 
-def cmp_header():
-
-    # header_text = "🗣️🤖💬"
-    # if st.session_state.model == AgentEndpoints.phi.value:
-    #     header_text += " :material/router:"
-    # elif st.session_state.model == AgentEndpoints.llama.value:
-    #     header_text += " 🦙"
-
-    # center_text("p", header_text, size=40)
-    # st.header(header_text, divider="rainbow")
-    # st.header("🗣️🤖💬", divider="rainbow")
-    # st.header("🗣️🤖💬")
-
-    st.header(":rainbow[PlebChat :] " + format_agents(st.session_state.model), divider="rainbow")
 
 
+
+
+
+################################################################################################
 def main_page():
     ip_addr = st.context.headers.get('X-Forwarded-For', "?")
     user_agent = st.context.headers.get('User-Agent', "?")
@@ -136,7 +119,7 @@ def main_page():
         page_icon=favicon,
         layout="wide",
         # initial_sidebar_state="auto",
-        initial_sidebar_state="collapsed",
+        # initial_sidebar_state="collapsed",
     )
 
     header_placeholder = st.empty()
@@ -144,7 +127,9 @@ def main_page():
     cmp_options()
 
     with header_placeholder:
-        cmp_header()
+        # cmp_header()
+        st.header(":rainbow[PlebChat :] " + format_agents(st.session_state.model), divider="rainbow")
+
 
     hide_markdown_header_links()
     hide_stop_button()
@@ -175,7 +160,7 @@ def main_page():
                 json={
                     "user_message": prompt,
                     "messages": st.session_state.messages,
-                    "body": {},
+                    "body": {}, #TODO user_id
                 },
                 stream=True,
             )
@@ -186,7 +171,7 @@ def main_page():
                 for line in response.iter_lines():
                     if line:
                         line = line.decode()
-                        print("Received:", line)
+                        # print("Received:", line)
                         if line.startswith("data: "):
                             chunk = line[6:]  # Remove "data: " prefix
                             # Decode escaped newlines
