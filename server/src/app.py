@@ -48,7 +48,7 @@ def create_sse_response(stream):
 
 async def stream_graph_events(graph, input_data):
     """Stream events from a graph with standardized formatting."""
-    print(type(graph))
+
     async for event in graph.astream_events(input=input_data, version="v2"):
         kind = event["event"]
         if kind == "on_chat_model_stream":

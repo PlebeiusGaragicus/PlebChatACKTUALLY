@@ -122,10 +122,9 @@ def main_page():
         # initial_sidebar_state="collapsed",
     )
 
+
     header_placeholder = st.empty()
-
     cmp_options()
-
     with header_placeholder:
         # cmp_header()
         st.header(":rainbow[PlebChat :] " + format_agents(st.session_state.model), divider="rainbow")
@@ -138,11 +137,14 @@ def main_page():
 
 
 ####################################################################################################################################
-
-
-
     if "messages" not in st.session_state:
         st.session_state.messages = []
+
+        ## FIRST RUN TOAST BANNER
+        # st.toast(":rainbow[Welcome to PlebChat!]", icon=":material/smart_toy:")
+        # st.toast("#### :rainbow[Welcome to PlebChat!]")
+
+
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"], avatar=AVATAR_HUMAN if message["role"] == "user" else AVATAR_AI):
@@ -153,7 +155,7 @@ def main_page():
         with st.chat_message("user", avatar=AVATAR_HUMAN):
             st.markdown(prompt)
 
-        # with st.spinner("Thinking..."):
+
         with st.chat_message("assistant", avatar=AVATAR_AI):
             response = requests.post(
                 url=f"{LANGSERVE_ENDPOINT}:{PORT}/{st.session_state.model}",
@@ -167,7 +169,7 @@ def main_page():
             message_placeholder = st.empty()
             full_response = ""
 
-            with st.spinner("Thinking..."):
+            with st.spinner("🧠 Thinking..."):
                 for line in response.iter_lines():
                     if line:
                         line = line.decode()
