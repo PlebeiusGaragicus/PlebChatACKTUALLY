@@ -27,7 +27,8 @@ from src.graphs.research.research_rabbit import graph as research_graph
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins #TODO
+    # allow_origins=["*"], # USE FOR DEVELOPMENT
+    allow_origins=["http://localhost:8501"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,18 +47,45 @@ def create_sse_response(stream):
         }
     )
 
+# THESE ARE THE KINDS GENERATED FROM OUR LANDGRAPH AGENT
+# on_chat_model_start
+# on_chat_model_stream
+# on_chat_model_end
+# on_llm_start
+# on_llm_stream
+# on_llm_end
+# on_chain_start
+# on_chain_stream
+# on_chain_end
+# on_tool_start
+# on_tool_stream
+# on_tool_end
+# on_retriever_start
+# on_retriever_chunk
+# on_retriever_end
+# on_prompt_start
+# on_prompt_end
+
 async def stream_graph_events(graph, input_data):
     """Stream events from a graph with standardized formatting."""
 
     async for event in graph.astream_events(input=input_data, version="v2"):
         kind = event["event"]
-        if kind == "on_chat_model_stream":
+
+        if kind == 'on_chat_model_start':
+            # Send a control event with type
+            yield f"event: status\ndata: {{'status': 'model_start'}}\n\n"
+
+        elif kind == "on_chat_model_stream":
             content = event["data"]["chunk"].content
             if content:
-                # print("Sending:", content)
-                # Replace newlines with encoded form for SSE
+                # Content events don't need special event type - they're default
                 content_encoded = content.replace('\n', '\\n')
                 yield f"data: {content_encoded}\n\n"
+                
+        elif kind in ['on_tool_start', 'on_tool_end', 'on_chain_start', 'on_chain_end']:
+            # Send control events for tool/chain status
+            yield f"event: status\ndata: {{'status': '{kind}'}}\n\n"
 
 
 async def stream_simple_response(message: str):

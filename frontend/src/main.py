@@ -26,6 +26,14 @@ from src.login import login
 AVATAR_HUMAN = f"{STATIC_PATH}/user2.png"
 AVATAR_AI = f"{STATIC_PATH}/assistant.png"
 
+HOME_SCREEN_TEXT = """
+## Welcome to :rainbow[PlebChat!]
+
+This is a collection of my __self-hosted__ machine learning tools.
+
+Please login with your username and password to continue.
+"""
+
 
 # @st.cache_data
 # def img_to_bytes(img_path):
@@ -170,6 +178,13 @@ def main_page():
 
 ####################################################
     if not login():
+        with st.container(border=True):
+            cols2 = st.columns(2)
+        with cols2[1]:
+            st.markdown("![PlebChat](app/static/assistant_big_nobg.png)")
+        with cols2[0]:
+            st.markdown(HOME_SCREEN_TEXT)
+
         st.stop()
 ####################################################
 
@@ -239,18 +254,40 @@ def main_page():
                 message_placeholder = st.empty()
                 full_response = ""
 
-                with st.spinner("🧠 Thinking..."):
+                # Create a status container
+                with st.status("🧠 Agent at work...", expanded=True) as status:
                     try:
                         for line in response.iter_lines():
                             if line:
                                 line = line.decode()
                                 print("Received:", line)  # Debug line
-                                if line.startswith("data: "):
+
+                                # Handle status events
+                                if line.startswith("event: status"):
+                                    continue  # Skip the event line
+
+                                elif line.startswith("data: ") and "status" in line:
+                                    status_data = line[6:]  # Remove "data: " prefix
+                                    print("Status event received:", status_data)
+                                    # Update UI based on status
+                                    if "model_start" in status_data:
+                                        status.update(label="🤖 Model thinking...", state="running")
+                                    elif "on_tool_start" in status_data:
+                                        status.update(label="🔧 Using tools...", state="running")
+                                    elif "on_chain_start" in status_data:
+                                        status.update(label="⚡ Processing chain...", state="running")
+                                    continue
+
+                                # Handle regular content
+                                elif line.startswith("data: "):
                                     chunk = line[6:]  # Remove "data: " prefix
                                     # Decode escaped newlines
                                     chunk = chunk.replace('\\n', '\n')
                                     full_response += chunk
                                     message_placeholder.markdown(full_response + "▌")
+                                
+                        # Update final status
+                        status.update(label="✅ Response complete!", state="complete")
                         message_placeholder.markdown(full_response)
                         st.session_state.messages.append({"role": "assistant", "content": full_response})
                     except (requests.exceptions.ChunkedEncodingError, requests.exceptions.RequestException) as e:
